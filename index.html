@@ -68,7 +68,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);
   font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:none;flex-shrink:0}
 .btn-new-folder.visible{display:flex;align-items:center;gap:4px}
 .btn-new-folder:hover{border-color:var(--red);color:var(--red)}
-.chip-del{margin-left:6px;font-size:.72rem;cursor:pointer;
+.chip-del{margin-right:5px;margin-left:0;font-size:.72rem;cursor:pointer;
   padding:2px 7px;border-radius:4px;background:rgba(214,40,40,.35);
   color:#ff8888;border:1px solid rgba(214,40,40,.5);transition:all .2s;
   flex-shrink:0;display:none;align-items:center}
@@ -288,7 +288,7 @@ select.field option{background:var(--navy-mid);color:var(--white)}
 <!-- FOLDERS BAR -->
 <nav id="folders-bar" class="folders-bar">
   <button class="folder-chip active" data-folder="__all__" onclick="selectFolder('__all__',this)">
-    📁 Tous
+    Tous
   </button>
   <!-- dynamic folders injected here -->
   <button id="btn-new-folder" class="btn-new-folder" onclick="showNewFolderModal()">
@@ -494,18 +494,26 @@ function renderFolders() {
     const chip  = document.createElement('button');
     chip.className = 'folder-chip' + (curFolder === f ? ' active' : '');
     chip.dataset.folder = f;
-    chip.innerHTML = `📁 <span class="chip-label">${f}</span> <span class="chip-count">(${count})</span>`;
-
-    // Always add delete button — CSS controls visibility via .admin-mode
+    // Delete button on LEFT — always in DOM, shown via CSS .admin-mode
     const del = document.createElement('span');
     del.className = 'chip-del';
     del.textContent = '🗑️';
     del.title = 'Supprimer ce dossier';
-    del.addEventListener('click', (e) => {
-      e.stopPropagation();
-      confirmDeleteFolder(e, f);
-    });
+    del.addEventListener('click', (e) => { e.stopPropagation(); confirmDeleteFolder(e, f); });
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'chip-label';
+    labelSpan.textContent = f;
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'chip-count';
+    countSpan.textContent = `(${count})`;
+
     chip.appendChild(del);
+    chip.appendChild(document.createTextNode(' '));
+    chip.appendChild(labelSpan);
+    chip.appendChild(document.createTextNode(' '));
+    chip.appendChild(countSpan);
 
     chip.addEventListener('click', (e) => {
       if (!e.target.classList.contains('chip-del')) selectFolder(f, chip);
@@ -519,7 +527,7 @@ function renderFolders() {
     const chip = document.createElement('button');
     chip.className = 'folder-chip' + (curFolder === '__none__' ? ' active' : '');
     chip.dataset.folder = '__none__';
-    chip.innerHTML = `📎 Sans dossier <span class="chip-count">(${noFolder})</span>`;
+    chip.innerHTML = `Sans dossier <span class="chip-count">(${noFolder})</span>`;
     chip.onclick = () => selectFolder('__none__', chip);
     bar.insertBefore(chip, newBtn);
   }
