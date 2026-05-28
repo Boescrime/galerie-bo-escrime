@@ -50,18 +50,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);
 .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:6px}
 
 /* ── FOLDERS BAR ── */
-.folders-bar{padding:8px 14px;display:flex;align-items:flex-start;gap:5px;
-  flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.05)}
+.folders-bar{padding:8px 14px;display:flex;align-items:center;gap:5px;
+  overflow-x:auto;overflow-y:visible;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent;
+  border-bottom:1px solid rgba(255,255,255,.05);width:100%;box-sizing:border-box}
+.folders-bar::-webkit-scrollbar{height:3px}
+.folders-bar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px}
 .folder-chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   color:var(--muted);padding:5px 10px;border-radius:20px;font-family:'DM Sans',sans-serif;
   font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:flex;
-  align-items:center;gap:4px}
+  align-items:center;gap:4px;flex-shrink:0}
+.folder-chip .chip-label{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .folder-chip.active{background:var(--red);border-color:var(--red);color:#fff}
 .folder-chip:hover:not(.active){background:rgba(255,255,255,.1);color:var(--white)}
 .folder-chip .chip-count{font-size:.68rem;opacity:.7}
 .btn-new-folder{background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);
   color:var(--muted);padding:5px 10px;border-radius:20px;font-family:'DM Sans',sans-serif;
-  font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:none}
+  font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:none;flex-shrink:0}
 .btn-new-folder.visible{display:flex;align-items:center;gap:4px}
 .btn-new-folder:hover{border-color:var(--red);color:var(--red)}
 .chip-del{margin-left:6px;font-size:.72rem;cursor:pointer;
@@ -490,7 +494,7 @@ function renderFolders() {
     const chip  = document.createElement('button');
     chip.className = 'folder-chip' + (curFolder === f ? ' active' : '');
     chip.dataset.folder = f;
-    chip.innerHTML = `📁 ${f} <span class="chip-count">(${count})</span>`;
+    chip.innerHTML = `📁 <span class="chip-label">${f}</span> <span class="chip-count">(${count})</span>`;
 
     // Always add delete button — CSS controls visibility via .admin-mode
     const del = document.createElement('span');
