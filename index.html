@@ -488,9 +488,23 @@ function renderFolders() {
     const chip  = document.createElement('button');
     chip.className = 'folder-chip' + (curFolder === f ? ' active' : '');
     chip.dataset.folder = f;
-    const delBtn = adminMode ? `<span class="chip-del" onclick="confirmDeleteFolder(event,'${f.replace(/'/g,String.fromCharCode(39))}')">🗑️</span>` : '';
-    chip.innerHTML = `📁 ${f} <span class="chip-count">(${count})</span>${delBtn}`;
-    chip.onclick = (e) => { if (!e.target.classList.contains('chip-del')) selectFolder(f, chip); };
+    chip.innerHTML = `📁 ${f} <span class="chip-count">(${count})</span>`;
+
+    if (adminMode) {
+      const del = document.createElement('span');
+      del.className = 'chip-del';
+      del.textContent = '🗑️';
+      del.title = 'Supprimer ce dossier';
+      del.addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmDeleteFolder(e, f);
+      });
+      chip.appendChild(del);
+    }
+
+    chip.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('chip-del')) selectFolder(f, chip);
+    });
     bar.insertBefore(chip, newBtn);
   });
 
