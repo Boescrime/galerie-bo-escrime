@@ -39,20 +39,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);
 .btn-ghost:hover{background:rgba(255,255,255,.08);color:var(--white)}
 
 /* ── TOOLBAR (selection) ── */
-.toolbar{background:rgba(13,27,42,.98);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(244,162,97,.3);padding:10px 16px;
+.toolbar{background:rgba(13,27,42,.97);backdrop-filter:blur(16px);
+  border:1px solid rgba(244,162,97,.35);padding:10px 16px;
   display:none;align-items:center;gap:8px;flex-wrap:wrap;
-  position:sticky;top:57px;z-index:190;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:500;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.6);
+  min-width:320px;max-width:92vw}
 .toolbar.visible{display:flex}
-.toolbar-info{font-size:.85rem;color:var(--yellow);flex:1}
+.toolbar-info{font-size:.85rem;color:var(--yellow);flex:1;white-space:nowrap}
 .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:6px}
 
 /* ── FOLDERS BAR ── */
 .folders-bar{padding:8px 14px;display:flex;align-items:flex-start;gap:5px;
   flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.05)}
 .folder-chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-  color:var(--muted);padding:5px 12px;border-radius:20px;font-family:'DM Sans',sans-serif;
-  font-size:.78rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:4px}
+  color:var(--muted);padding:5px 10px;border-radius:20px;font-family:'DM Sans',sans-serif;
+  font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:flex;
+  align-items:center;gap:3px;max-width:160px;overflow:hidden;text-overflow:ellipsis}
 .folder-chip.active{background:var(--red);border-color:var(--red);color:#fff}
 .folder-chip:hover:not(.active){background:rgba(255,255,255,.1);color:var(--white)}
 .folder-chip .chip-count{font-size:.68rem;opacity:.7}
@@ -89,11 +92,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 /* checkbox overlay */
-.item-check{position:absolute;top:8px;left:8px;width:24px;height:24px;
-  background:rgba(13,27,42,.7);border:2px solid rgba(255,255,255,.5);border-radius:6px;
-  display:none;align-items:center;justify-content:center;z-index:3;transition:all .2s}
+.item-check{position:absolute;top:8px;left:8px;width:26px;height:26px;
+  background:rgba(13,27,42,.8);border:2px solid rgba(255,255,255,.6);border-radius:6px;
+  display:none;align-items:center;justify-content:center;z-index:3;transition:all .2s;
+  font-size:.85rem;font-weight:bold}
 .admin-mode .item-check{display:flex}
-.item--selected .item-check{background:var(--yellow);border-color:var(--yellow)}
+.item--selected .item-check{background:var(--yellow);border-color:var(--yellow);color:#000}
+/* in admin mode, dim unselected items slightly to hint they're clickable */
+.admin-mode .item:not(.item--selected){opacity:.85}
+.admin-mode .item:hover{opacity:1}
 
 .item-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(13,27,42,.8) 0%,transparent 50%);
   opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:10px}
@@ -217,6 +224,7 @@ select.field option{background:var(--navy-mid);color:var(--white)}
 /* ── HINT ── */
 .gallery-hint{text-align:center;padding:12px;font-size:.75rem;color:rgba(255,255,255,.25);
   border-top:1px solid rgba(255,255,255,.04)}
+.gallery-wrap{padding-bottom:80px}
 </style>
 </head>
 <body>
@@ -246,20 +254,25 @@ select.field option{background:var(--navy-mid);color:var(--white)}
   </div>
 </header>
 
-<!-- ADMIN TOOLBAR (selection actions) -->
+<!-- ADMIN BANNER -->
+<div id="admin-banner" style="display:none;background:rgba(244,162,97,.12);border-bottom:1px solid rgba(244,162,97,.25);padding:8px 16px;text-align:center;font-size:.78rem;color:var(--yellow)">
+  🔧 Mode Admin actif — Cliquez sur les médias pour les sélectionner
+</div>
+
+<!-- ADMIN TOOLBAR (floating pill, fixed bottom) -->
 <div id="toolbar" class="toolbar">
   <span id="toolbar-info" class="toolbar-info">0 sélectionné</span>
-  <button class="btn btn-ghost btn-sm" onclick="selectAll()">Tout sélectionner</button>
-  <button class="btn btn-ghost btn-sm" onclick="deselectAll()">Désélectionner</button>
+  <button class="btn btn-ghost btn-sm" onclick="selectAll()">Tout</button>
+  <button class="btn btn-ghost btn-sm" onclick="deselectAll()">✕</button>
   <button class="btn btn-ghost btn-sm" onclick="showMoveModal()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
     </svg>
     Déplacer
   </button>
   <button class="btn btn-danger btn-sm" onclick="confirmDeleteSelected()">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
     </svg>
     Supprimer
   </button>
@@ -611,6 +624,7 @@ function toggleAdminMode() {
     document.body.classList.remove('admin-mode');
     document.getElementById('lb-delete-btn').style.display = 'none';
     document.getElementById('btn-new-folder').classList.remove('visible');
+    document.getElementById('admin-banner').style.display = 'none';
     renderFolders();
     render();
     showToast('🔒 Mode admin désactivé');
@@ -635,9 +649,10 @@ function checkAdminPwd() {
     document.getElementById('btn-admin-toggle').classList.add('active');
     document.body.classList.add('admin-mode');
     document.getElementById('btn-new-folder').classList.add('visible');
+    document.getElementById('admin-banner').style.display = 'block';
     renderFolders();
     render();
-    showToast('🔓 Mode admin activé');
+    showToast('🔓 Mode admin — cliquez sur les médias pour sélectionner');
   } else {
     const f = document.getElementById('admin-pwd');
     f.classList.add('error');
