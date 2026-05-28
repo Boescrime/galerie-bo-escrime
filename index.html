@@ -39,17 +39,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);
 .btn-ghost:hover{background:rgba(255,255,255,.08);color:var(--white)}
 
 /* ── TOOLBAR (selection) ── */
-.toolbar{background:rgba(13,27,42,.95);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(244,162,97,.2);padding:10px 16px;
-  display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.toolbar{background:rgba(13,27,42,.98);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(244,162,97,.3);padding:10px 16px;
+  display:none;align-items:center;gap:8px;flex-wrap:wrap;
+  position:sticky;top:57px;z-index:190;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toolbar.visible{display:flex}
 .toolbar-info{font-size:.85rem;color:var(--yellow);flex:1}
 .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:6px}
 
 /* ── FOLDERS BAR ── */
-.folders-bar{padding:10px 14px;display:flex;align-items:center;gap:6px;
-  overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,.05)}
-.folders-bar::-webkit-scrollbar{display:none}
+.folders-bar{padding:8px 14px;display:flex;align-items:flex-start;gap:5px;
+  flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.05)}
 .folder-chip{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
   color:var(--muted);padding:5px 12px;border-radius:20px;font-family:'DM Sans',sans-serif;
   font-size:.78rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:4px}
@@ -61,6 +61,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);
   font-size:.75rem;cursor:pointer;white-space:nowrap;transition:all .2s;display:none}
 .btn-new-folder.visible{display:flex;align-items:center;gap:4px}
 .btn-new-folder:hover{border-color:var(--red);color:var(--red)}
+.chip-del{margin-left:4px;opacity:.5;font-size:.65rem;cursor:pointer;
+  padding:1px 3px;border-radius:3px;transition:all .2s}
+.chip-del:hover{opacity:1;background:rgba(214,40,40,.4);color:#fff}
 
 /* ── FILTER TABS ── */
 .filter-tabs{padding:8px 14px;display:flex;gap:5px;border-bottom:1px solid rgba(255,255,255,.04)}
@@ -471,8 +474,9 @@ function renderFolders() {
     const chip  = document.createElement('button');
     chip.className = 'folder-chip' + (curFolder === f ? ' active' : '');
     chip.dataset.folder = f;
-    chip.innerHTML = `📁 ${f} <span class="chip-count">(${count})</span>`;
-    chip.onclick = () => selectFolder(f, chip);
+    const delBtn = adminMode ? `<span class="chip-del" onclick="confirmDeleteFolder(event,'${f.replace(/'/g,'\'')}')" title="Supprimer ce dossier">✕</span>` : '';
+    chip.innerHTML = `📁 ${f} <span class="chip-count">(${count})</span>${delBtn}`;
+    chip.onclick = (e) => { if (!e.target.classList.contains('chip-del')) selectFolder(f, chip); };
     bar.insertBefore(chip, newBtn);
   });
 
@@ -738,18 +742,28 @@ async function executeDelete() {
   if (btn) { btn.textContent = '…'; btn.disabled = true; }
   try {
     const rec = await fetchDB();
-    // selected already contains urls directly
-    let urlsToDelete;
-    if (deleteTarget === 'selected') {
-      urlsToDelete = new Set(selected); // selected stores urls
+    if (deleteTarget && deleteTarget.folder) {
+      // Delete folder — media become unclassified
+      const fname = deleteTarget.folder;
+      rec.folders = (rec.folders || []).filter(f => f !== fname);
+      rec.media   = (rec.media   || []).map(m => m.folder === fname ? { ...m, folder: null } : m);
+      await saveDB(rec);
+      if (curFolder === fname) curFolder = '__all__';
+      showToast(`📁 Dossier "${fname}" supprimé`);
     } else {
-      urlsToDelete = new Set([deleteTarget.url]);
+      // Delete media
+      let urlsToDelete;
+      if (deleteTarget === 'selected') {
+        urlsToDelete = new Set(selected);
+      } else {
+        urlsToDelete = new Set([deleteTarget.url]);
+      }
+      const before = rec.media.length;
+      rec.media = rec.media.filter(m => !urlsToDelete.has(m.url));
+      await saveDB(rec);
+      const n = before - rec.media.length;
+      showToast(`🗑️ ${n} élément${n > 1 ? 's' : ''} supprimé${n > 1 ? 's' : ''}`);
     }
-    const before = rec.media.length;
-    rec.media = rec.media.filter(m => !urlsToDelete.has(m.url));
-    await saveDB(rec);
-    const n = before - rec.media.length;
-    showToast(`🗑️ ${n} élément${n > 1 ? 's' : ''} supprimé${n > 1 ? 's' : ''}`);
     selected.clear();
     deleteTarget = null;
     if (document.getElementById('lightbox').classList.contains('open')) closeLb();
@@ -791,6 +805,14 @@ async function createFolder() {
   } finally {
     btn.textContent = 'Créer →'; btn.disabled = false;
   }
+}
+
+function confirmDeleteFolder(e, folderName) {
+  e.stopPropagation();
+  deleteTarget = { folder: folderName };
+  document.getElementById('delete-confirm-text').textContent =
+    `Supprimer le dossier "${folderName}" ? (les médias ne sont pas supprimés, ils passent en "Sans dossier")`;
+  showModal('modal-confirm-delete');
 }
 
 function showMoveModal() {
